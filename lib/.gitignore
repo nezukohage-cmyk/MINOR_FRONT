@@ -1,0 +1,71 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Flutter plugin files
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Generated files
+generated_plugin_registrant.dart
+
+# Android related
+android/.gradle/
+android/captures/
+android/app/*.iml
+android/local.properties
+android/key.properties
+android/.classpath
+android/.project
+android/.settings/
+android/.idea/
+
+# iOS related
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/Generated.xcconfig
+ios/.generated/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+ios/Runner.xcodeproj/xcuserdata/
+ios/.symlinks/
+
+# macOS related
+macos/Flutter/Flutter-Debug.xcconfig
+macos/Flutter/Flutter-Release.xcconfig
+macos/Pods/
+macos/Runner.xcworkspace/
+macos/Runner.xcodeproj/project.xcworkspace/
+macos/Runner.xcodeproj/xcuserdata/
+
+# Web related
+web/.dart_tool/
+
+# Linux related
+linux/flutter/ephemeral/
+
+# Windows related
+windows/flutter/ephemeral/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+
+# Crashlytics / Firebase (if used)
+app.*.symbols
+# (NEVER ignore google-services.json manually unless needed)
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment configs
+*.env
+.env.*
