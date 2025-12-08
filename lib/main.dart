@@ -47,6 +47,7 @@
 // }
 
 
+import 'package:Reddit/SignUp/logEmail.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Reddit/SignUp/login.dart';
@@ -101,7 +102,7 @@ class _AuthPagerState extends State<AuthPager> {
         controller: _controller,
         children: const [
           Red(), // Sign Up page
-          RL(),  // Login page
+          logEmail(),  // Login page
         ],
       ),
     );

@@ -98,6 +98,7 @@
 //     );
 //   }
 // }
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter/material.dart';
 import 'package:Reddit/services/auth_service.dart';
@@ -139,11 +140,23 @@ class _logEmailState extends State<logEmail> {
 
       print("Login Success: $res");
 
-      // After login success → Navigate to homepage
+      final prefs = await SharedPreferences.getInstance();
+
+// Extract token from response
+      final token = res["token"];
+      if (token != null) {
+        await prefs.setString("token", token);
+        print("TOKEN SAVED = $token");
+      } else {
+        print("ERROR: backend returned no token");
+      }
+
+// Now navigate
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeFeed()),
       );
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
@@ -191,16 +204,16 @@ class _logEmailState extends State<logEmail> {
 
             const SizedBox(height: 15),
 
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const Red()),
-                );
-              },
-              child: const Text("Continue with phone number",
-                  style: TextStyle(fontSize: 15)),
-            ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (_) => const Red()),
+            //     );
+            //   },
+            //   child: const Text("Continue with phone number",
+            //       style: TextStyle(fontSize: 15)),
+            // ),
 
             const SizedBox(height: 20),
             const Divider(thickness: 3, color: Colors.white),

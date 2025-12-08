@@ -209,7 +209,14 @@ class Api {
     }
     return null;
   }
-
+  Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
+    try {
+      final res = await _dio.post(path, data: body);
+      return res.data;
+    } catch (e) {
+      throw Exception("POST error: $e");
+    }
+  }
 // ===============================================
 // DOWNLOAD BYTES (used for PDFs + images)
 // ===============================================
