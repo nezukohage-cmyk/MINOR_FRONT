@@ -1,110 +1,51 @@
-// import 'package:Reddit/SignUp/login.dart';
-// import 'package:Reddit/SignUp/sign.dart';
-// import 'package:flutter/material.dart';
-// import '';
-//
-// void main() {
-//   runApp(const MyApp());
-// }
-//
-// class MyApp extends StatelessWidget {
-//   const MyApp({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: '2B',
-//       debugShowCheckedModeBanner: false,
-//       theme: ThemeData.dark(),
-//       home: const AuthPager(),
-//     );
-//   }
-// }
-//
-// class AuthPager extends StatefulWidget {
-//   const AuthPager({super.key});
-//
-//   @override
-//   State<AuthPager> createState() => _AuthPagerState();
-// }
-//
-// class _AuthPagerState extends State<AuthPager> {
-//   final PageController _controller = PageController(initialPage: 0);
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       body: PageView(
-//         controller: _controller,
-//         children: [
-//           Red(),   // Sign Up page
-//           RL(),    // Log In page
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-
-import 'package:Reddit/SignUp/logEmail.dart';
+import 'package:Reddit/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Reddit/SignUp/login.dart';
-import 'package:Reddit/SignUp/sign.dart';
+
+// AUTH SCREENS
+import 'package:Reddit/SignUp/login.dart';   // LoginPage
+import 'package:Reddit/SignUp/sign.dart';    // SignUpPage
+
+// API
 import 'services/api.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize API with your backend address
   await Api().init(
     baseUrl: "http://192.168.29.143:8080",
   );
 
+  // Restore saved JWT token if exists
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   if (token != null && token.isNotEmpty) {
     Api().setToken(token);
   }
 
-  runApp(const MyApp());
+  runApp(const ExamBuddyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ExamBuddyApp extends StatelessWidget {
+  const ExamBuddyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '2B',
+      title: "Exam Buddy",
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      home: const AuthPager(),
-    );
-  }
-}
 
-class AuthPager extends StatefulWidget {
-  const AuthPager({super.key});
+      // App starts at login page
+      initialRoute: "/",
 
-  @override
-  State<AuthPager> createState() => _AuthPagerState();
-}
+      routes: {
+        "/": (context) => const LoginPage(),      // Beautiful sign-in UI
+        "/login": (context) => const LoginPage(), // Same page
+        "/signup": (context) => const SignUpPage(),
+        "/home": (context) => const HomePage(),
 
-class _AuthPagerState extends State<AuthPager> {
-  final PageController _controller = PageController(initialPage: 0);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: PageView(
-        controller: _controller,
-        children: const [
-          Red(), // Sign Up page
-          logEmail(),  // Login page
-        ],
-      ),
+      },
     );
   }
 }

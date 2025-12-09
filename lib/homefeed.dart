@@ -1,6 +1,6 @@
 // homefeed.dart (updated)
 // Replace your existing file with this.
-
+import 'package:Reddit/pages/user.dart';
 import 'package:flutter/material.dart';
 import 'package:Reddit/services/api.dart';
 import 'package:Reddit/quiz.dart';
@@ -48,7 +48,7 @@ class _HomeFeedState extends State<HomeFeed> {
     if (_currentIndex == 1) return const QuizPage();
     if (_currentIndex == 2) return const UploadNotePage();
     if (_currentIndex == 3) return _placeholder("Inbox");
-    if (_currentIndex == 4) return _placeholder("Profile");
+    if (_currentIndex == 4) return const UserPage();
     return _buildFeedPage();
   }
 

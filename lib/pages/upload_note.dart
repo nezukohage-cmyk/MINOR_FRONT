@@ -69,7 +69,7 @@ class _UploadNotePageState extends State<UploadNotePage> {
 
   // Change this to your backend host when testing on device/web.
   // You previously reported backend IP 192.168.29.143 — use that if testing on device or web:
-  static const String baseUrl = "http://192.168.29.143:8080";
+  static const String baseUrl = "http://172.20.10.7:8080";
 
   // Pick multiple files (withData true required for Web)
   Future<void> pickFiles() async {

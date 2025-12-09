@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:Reddit/services/api.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class SignInPage extends StatefulWidget {
+  const SignInPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<SignInPage> createState() => _SignInPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _SignInPageState extends State<SignInPage> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _showPassword = false;
-  bool _loading = false;
-  String _role = "student";
 
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _passCtrl.dispose();
-    super.dispose();
-  }
+  String _role = "student";
+  bool _loading = false;
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -30,22 +23,23 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final res = await Api().postJson("/auth/login", body: {
-        "identifier": _emailCtrl.text.trim(),  // IMPORTANT FIX
+        "email": _emailCtrl.text.trim(),
         "password": _passCtrl.text.trim(),
+        "role": _role,
       });
 
+      // Save JWT token
       await Api().setToken(res["token"]);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login successful!"), backgroundColor: Colors.green),
-      );
-
-      //Navigator.pushReplacementNamed(context, "/home");
+      // Navigate to home
       Navigator.pushReplacementNamed(context, "/home");
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
       );
     }
 
@@ -59,39 +53,56 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
 
-      // HEADER
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
-          "Exam buddy",
-          style: TextStyle(
-            color: Color(0xFF2E3A8C),
-            fontWeight: FontWeight.w600,
-            fontSize: 22,
+        backgroundColor: Colors.white,
+        title: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: Text(
+            "Classroom Lite",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2E3A8C),
+            ),
           ),
         ),
         actions: [
           TextButton(
+            onPressed: () {
+              Navigator.pushNamed(context, "/login");
+            },
+            child: const Text("Log in",
+                style: TextStyle(color: Color(0xFF2E3A8C))),
+          ),
+          TextButton(
             onPressed: () {},
-            child: const Text("Help", style: TextStyle(color: Color(0xFF2E3A8C))),
+            child: const Text("Help",
+                style: TextStyle(color: Color(0xFF2E3A8C))),
           ),
           Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.only(right: 16.0),
             child: OutlinedButton(
-              onPressed: () {},
-              child: const Text("Sign in", style: TextStyle(color: Color(0xFF2E3A8C))),
+              onPressed: () {
+                Navigator.pushNamed(context, "/signup");
+              },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF2E3A8C)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24)),
+              ),
+              child: const Text("Sign in",
+                  style: TextStyle(color: Color(0xFF2E3A8C))),
             ),
-          ),
+          )
         ],
       ),
 
-      // BODY
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
+            constraints: const BoxConstraints(maxWidth: 1050),
             child: Card(
               elevation: 8,
               shape: RoundedRectangleBorder(
@@ -121,7 +132,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // LEFT PART OF UI
   Widget _leftSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,123 +139,107 @@ class _LoginPageState extends State<LoginPage> {
         const Text(
           "Welcome back",
           style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
+            fontSize: 30,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
           ),
         ),
         const SizedBox(height: 8),
         const Text(
           "Sign in to access your classrooms, notes and quizzes.",
-          style: TextStyle(fontSize: 16, color: Colors.black54),
+          style: TextStyle(fontSize: 15, color: Color(0xFF374151)),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
 
-        // Blue gradient info box
+        // Blue/purple info ribbon
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
             gradient: const LinearGradient(
               colors: [Color(0xFF2E3A8C), Color(0xFF6C5CE7)],
             ),
-            borderRadius: BorderRadius.all(Radius.circular(14)),
           ),
           child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.lightbulb, color: Colors.white, size: 32),
-              SizedBox(width: 14),
+              Icon(Icons.lightbulb,
+                  color: Colors.white, size: 28),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  "Faculty/Admins can create classes and upload notes.\n"
-                      "Students can join classes using a code.",
-                  style: TextStyle(color: Colors.white, fontSize: 15),
+                  "Faculty/Admins can create classes and upload notes.\nStudents can join classes using a code.",
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
           ),
         ),
 
-        const SizedBox(height: 24),
-        const Text(
-          "Why Exam buddy?",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
+        const SizedBox(height: 18),
+        const Text("Why Classroom Lite?",
+            style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         const Text(
           "- Easy notes sharing and quiz management\n"
               "- Role-based access for teachers and students\n"
               "- Lightweight and runs locally",
-          style: TextStyle(color: Colors.black54),
+          style: TextStyle(color: Color(0xFF6B7280)),
         ),
       ],
     );
   }
 
-  // RIGHT PART - SIGN IN FORM
   Widget _rightSection() {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            "Sign in",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
+          const Text("Sign in",
+              style: TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           const Text(
             "Enter your credentials to continue.",
-            style: TextStyle(color: Colors.black54),
+            style: TextStyle(color: Color(0xFF6B7280)),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // EMAIL
+          // Email
           TextFormField(
             controller: _emailCtrl,
             decoration: const InputDecoration(labelText: "Email"),
-            validator: (value) {
-              if (value == null || value.isEmpty) return "Enter email";
-              if (!value.contains("@")) return "Enter a valid email";
+            validator: (v) {
+              if (v == null || v.isEmpty) return "Enter email";
+              if (!v.contains("@")) return "Invalid email";
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // PASSWORD
+          // Password
           TextFormField(
             controller: _passCtrl,
-            obscureText: !_showPassword,
-            decoration: InputDecoration(
-              labelText: 'Password',
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _showPassword ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _showPassword = !_showPassword;
-                  });
-                },
-              ),
-            ),
+            obscureText: true,
+            decoration: const InputDecoration(labelText: "Password"),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Enter your password';
-              if (v.length < 6) return 'Password must be at least 6 characters';
+              if (v == null || v.isEmpty) return "Enter password";
+              if (v.length < 6) return "Must be at least 6 characters";
               return null;
             },
           ),
+          const SizedBox(height: 14),
 
-          const SizedBox(height: 16),
-
-          // ROLE SELECTOR
+          // Role selector
           Row(
             children: [
               Expanded(
                 child: RadioListTile(
                   value: "student",
                   groupValue: _role,
-                  onChanged: (v) => setState(() => _role = v!),
+                  onChanged: (v) {
+                    setState(() => _role = v!);
+                  },
                   title: const Text("Student"),
                 ),
               ),
@@ -253,34 +247,48 @@ class _LoginPageState extends State<LoginPage> {
                 child: RadioListTile(
                   value: "admin",
                   groupValue: _role,
-                  onChanged: (v) => setState(() => _role = v!),
+                  onChanged: (v) {
+                    setState(() => _role = v!);
+                  },
                   title: const Text("Teacher / Admin"),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
-          // LOGIN BUTTON
+          // Login button
           ElevatedButton(
             onPressed: _loading ? null : _login,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFB020),
               foregroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 15),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: _loading
-                ? const CircularProgressIndicator(color: Colors.black)
+                ? const CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.black,
+            )
                 : const Text("Sign in"),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // SIGNUP BUTTON
+          // Google sign in (placeholder)
+          OutlinedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Icons.login, size: 18),
+            label: const Text("Sign in with Google"),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Create account link
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -297,7 +305,7 @@ class _LoginPageState extends State<LoginPage> {
           const SizedBox(height: 8),
           const Text(
             "This demo runs locally. Replace with your backend API.",
-            style: TextStyle(color: Colors.black45, fontSize: 12),
+            style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
           ),
         ],
       ),
