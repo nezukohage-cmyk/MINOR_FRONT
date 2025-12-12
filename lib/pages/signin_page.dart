@@ -167,7 +167,7 @@ class _SignInPageState extends State<SignInPage> {
               SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  "Faculty/Admins can create classes and upload notes.\nStudents can join classes using a code.",
+                  "Students can learn\nLearn Sleep Repeat",
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -176,7 +176,7 @@ class _SignInPageState extends State<SignInPage> {
         ),
 
         const SizedBox(height: 18),
-        const Text("Why Classroom Lite?",
+        const Text("Why Exam buddy?",
             style: TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         const Text(

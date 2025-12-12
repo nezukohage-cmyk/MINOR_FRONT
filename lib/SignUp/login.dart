@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:Reddit/services/api.dart';
 
@@ -135,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 8),
         const Text(
-          "Sign in to access your classrooms, notes and quizzes.",
+          "Sign in to access your clusters, notes and quizzes.",
           style: TextStyle(fontSize: 16, color: Colors.black54),
         ),
         const SizedBox(height: 24),
@@ -156,8 +157,8 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  "Faculty/Admins can create classes and upload notes.\n"
-                      "Students can join classes using a code.",
+                  "Students can learn \n"
+                      "Learn Sleep Repeat",
                   style: TextStyle(color: Colors.white, fontSize: 15),
                 ),
               ),
@@ -237,28 +238,26 @@ class _LoginPageState extends State<LoginPage> {
           ),
 
           const SizedBox(height: 16),
-
-          // ROLE SELECTOR
-          Row(
-            children: [
-              Expanded(
-                child: RadioListTile(
-                  value: "student",
-                  groupValue: _role,
-                  onChanged: (v) => setState(() => _role = v!),
-                  title: const Text("Student"),
-                ),
-              ),
-              Expanded(
-                child: RadioListTile(
-                  value: "admin",
-                  groupValue: _role,
-                  onChanged: (v) => setState(() => _role = v!),
-                  title: const Text("Teacher / Admin"),
-                ),
-              ),
-            ],
-          ),
+          // Row(
+          //   children: [
+          //     Expanded(
+          //       child: RadioListTile(
+          //         value: "student",
+          //         groupValue: _role,
+          //         onChanged: (v) => setState(() => _role = v!),
+          //         title: const Text("Student"),
+          //       ),
+          //     ),
+          //     Expanded(
+          //       child: RadioListTile(
+          //         value: "admin",
+          //         groupValue: _role,
+          //         onChanged: (v) => setState(() => _role = v!),
+          //         title: const Text("Teacher / Admin"),
+          //       ),
+          //     ),
+          //   ],
+          // ),
 
           const SizedBox(height: 16),
 

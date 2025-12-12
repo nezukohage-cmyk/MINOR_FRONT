@@ -103,7 +103,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       const SizedBox(height: 6),
 
                       const Text(
-                        "Create your account to start using Classroom Lite.",
+                        "Create your account to start using Exam buddy.",
                         style: TextStyle(color: Color(0xFF6B7280)),
                       ),
 
@@ -169,32 +169,32 @@ class _SignUpPageState extends State<SignUpPage> {
                       const SizedBox(height: 18),
 
                       // ROLE SELECTION
-                      const Text(
-                        "Select role",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 6),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: RadioListTile(
-                              value: "student",
-                              groupValue: _role,
-                              onChanged: (v) => setState(() => _role = v!),
-                              title: const Text("Student"),
-                            ),
-                          ),
-                          Expanded(
-                            child: RadioListTile(
-                              value: "admin",
-                              groupValue: _role,
-                              onChanged: (v) => setState(() => _role = v!),
-                              title: const Text("Teacher / Admin"),
-                            ),
-                          ),
-                        ],
-                      ),
+                      // const Text(
+                      //   "Select role",
+                      //   style: TextStyle(fontWeight: FontWeight.w600),
+                      // ),
+                      // const SizedBox(height: 6),
+                      //
+                      // Row(
+                      //   children: [
+                      //     Expanded(
+                      //       child: RadioListTile(
+                      //         value: "student",
+                      //         groupValue: _role,
+                      //         onChanged: (v) => setState(() => _role = v!),
+                      //         title: const Text("Student"),
+                      //       ),
+                      //     ),
+                      //     Expanded(
+                      //       child: RadioListTile(
+                      //         value: "admin",
+                      //         groupValue: _role,
+                      //         onChanged: (v) => setState(() => _role = v!),
+                      //         title: const Text("Teacher / Admin"),
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
 
                       const SizedBox(height: 16),
 

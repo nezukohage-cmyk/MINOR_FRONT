@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
+import 'package:http_parser/http_parser.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,13 +67,22 @@ class Api {
   Future<void> setToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_jwtKey, token);
+
+    // Immediately apply token to Dio headers
+    _dio.options.headers["Authorization"] = "Bearer $token";
+
+    print("TOKEN SET IN DIO: $token");
   }
 
   Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_jwtKey);
-  }
 
+    // Remove token from Dio headers
+    _dio.options.headers.remove("Authorization");
+
+    print("TOKEN CLEARED FROM DIO");
+  }
   // -------------------------
   // API METHODS
   // -------------------------
@@ -96,37 +105,89 @@ class Api {
         contentType: "multipart/form-data");
   }
 
-  Future<Map<String, dynamic>> postMultipart(String path,
-      {Map<String, dynamic>? fields,
-        Map<String, List<String>>? files}) async {
-    final form = FormData();
+  // add imports at top if not present:
+// import 'dart:typed_data';
+// import 'package:dio/dio.dart';
 
-    if (fields != null) {
+  Future<Map<String, dynamic>> postMultipart(
+      String path, {
+        FormData? formData,
+        Map<String, dynamic>? fields,
+        Map<String, List<dynamic>>? files,
+      }) async {
+    // Use provided FormData directly if passed
+    FormData form = formData ?? FormData();
+
+    // Add fields (text)
+    if (formData == null && fields != null) {
       fields.forEach((k, v) {
         form.fields.add(MapEntry(k, v.toString()));
       });
     }
 
-    if (files != null) {
+    // Add files (only if we built the form here)
+    if (formData == null && files != null) {
       for (final entry in files.entries) {
         final field = entry.key;
-        for (final filePath in entry.value) {
-          final file = File(filePath);
-          final fileName = file.uri.pathSegments.last;
+        final items = entry.value;
+        for (final item in items) {
+          // If item already a MultipartFile (e.g. created with MultipartFile.fromBytes/fromFile)
+          if (item is MultipartFile) {
+            form.files.add(MapEntry(field, item));
+            continue;
+          }
 
-          form.files.add(
-            MapEntry(
-              field,
-              await MultipartFile.fromFile(filePath, filename: fileName),
-            ),
-          );
+          // bytes (Uint8List / List<int>) — common on web via file_picker.withData
+          if (item is List<int> || item is Uint8List) {
+            final filename = "file_${DateTime.now().millisecondsSinceEpoch}.pdf";
+            form.files.add(
+              MapEntry(
+                field,
+                MultipartFile.fromBytes(item as List<int>, filename: filename),
+              ),
+            );
+            continue;
+          }
+
+          // Map form for explicit bytes + filename + contentType
+          if (item is Map) {
+            final bytes = item['bytes'] as List<int>?;
+            final filename = (item['filename'] ?? "file_${DateTime.now().millisecondsSinceEpoch}.pdf") as String;
+            final contentType = item['contentType'] as String?;
+            if (bytes != null) {
+              if (contentType != null) {
+                form.files.add(MapEntry(
+                  field,
+                  MultipartFile.fromBytes(bytes, filename: filename, contentType: MediaType.parse(contentType)),
+                ));
+              } else {
+                form.files.add(MapEntry(field, MultipartFile.fromBytes(bytes, filename: filename)));
+              }
+              continue;
+            }
+          }
+
+          // String path (mobile)
+          if (item is String) {
+            final fileName = item.split('/').last;
+            form.files.add(
+              MapEntry(
+                field,
+                await MultipartFile.fromFile(item, filename: fileName),
+              ),
+            );
+            continue;
+          }
+
+          throw Exception("Unsupported file type for multipart: ${item.runtimeType}");
         }
       }
     }
 
-    return _request("POST", path,
-        data: form, contentType: "multipart/form-data");
+    return _request("POST", path, data: form, contentType: "multipart/form-data");
   }
+
+
 
   Future<Map<String, dynamic>> putJson(String path,
       {Map<String, dynamic>? body}) async {
