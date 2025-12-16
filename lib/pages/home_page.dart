@@ -1,10 +1,14 @@
 // lib/pages/home_page.dart
 import 'package:Reddit/pages/cluster_details_page.dart';
+import 'package:Reddit/pages/quiz_setup_page.dart';
+import 'package:Reddit/pages/todo_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Reddit/services/api.dart';
 import 'package:Reddit/pages/semester_selector.dart';
 import 'package:Reddit/pages/quiz_page.dart';
+import 'package:Reddit/pages/quiz_history_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -36,19 +40,29 @@ class _HomePageState extends State<HomePage> {
   void _openMenu(String id) {
     switch (id) {
       case 'notes':
-        _body = SemesterSelector(
-          title: "Select Semester",
-          onSelect: (sem) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NotesPage(semester: sem),
-              ),
-            );
-          },
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SemesterSelector(
+              title: "Select Semester",
+              onSelect: (sem) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NotesPage(semester: sem),
+                  ),
+                );
+              },
+            ),
+          ),
         );
         break;
 
+
+      case 'quiz_history':
+        _body = const QuizHistoryPage();
+        _title = "Quiz History";
+        break;
       case 'quiz':
         _body = SemesterSelector(
           title: "Select Semester",
@@ -56,12 +70,13 @@ class _HomePageState extends State<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => QuizPage(semester: sem),
+                builder: (_) => QuizSetupPage(semester: sem),
               ),
             );
           },
         );
         break;
+
 
       case 'analysis':
         _body = const PlaceholderPage(label: "Analysis (Coming Soon)");
@@ -141,6 +156,7 @@ class _HomePageState extends State<HomePage> {
                 _drawerItem(Icons.class_, "clusters", () => _openMenu('clusters')),
                 _drawerItem(Icons.quiz, "Quiz", () => _openMenu('quiz')),
               ],
+              _drawerItem(Icons.history, "Quiz History", () => _openMenu('quiz_history')),
 
               _drawerItem(Icons.checklist, "To-Do", () => _openMenu('todo')),
               _drawerItem(Icons.summarize, "Summarizer", () => _openMenu('summarizer')),
@@ -480,121 +496,121 @@ class _ClustersPageState extends State<ClustersPage> {
   }
 }
 
-// -------- Todo Page (functional UI)
-class TodoPage extends StatefulWidget {
-  const TodoPage({super.key});
-  @override
-  State<TodoPage> createState() => _TodoPageState();
-}
-class _TodoPageState extends State<TodoPage> {
-  final _taskCtrl = TextEditingController();
-  List<Map<String, dynamic>> _tasks = []; // {id, text}
-  List<Map<String, dynamic>> _completed = [];
-
-  @override
-  void dispose() {
-    _taskCtrl.dispose();
-    super.dispose();
-  }
-
-  void _addTask() {
-    final text = _taskCtrl.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      final id = DateTime.now().millisecondsSinceEpoch.toString();
-      _tasks.insert(0, {"id": id, "text": text});
-      _taskCtrl.clear();
-    });
-  }
-
-  void _completeTask(String id) {
-    setState(() {
-      final idx = _tasks.indexWhere((t) => t["id"] == id);
-      if (idx != -1) {
-        final t = _tasks.removeAt(idx);
-        _completed.insert(0, t);
-      }
-    });
-  }
-
-  void _undoComplete(String id) {
-    setState(() {
-      final idx = _completed.indexWhere((t) => t["id"] == id);
-      if (idx != -1) {
-        final t = _completed.removeAt(idx);
-        _tasks.insert(0, t);
-      }
-    });
-  }
-
-  void _deleteCompleted(String id) {
-    setState(() {
-      _completed.removeWhere((t) => t["id"] == id);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // input row
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _taskCtrl,
-                  decoration: const InputDecoration(
-                    hintText: "Add a task...",
-                    fillColor: Colors.white,
-                    filled: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(onPressed: _addTask, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFB020)), child: const Text("Add"))
-            ],
-          ),
-        ),
-
-        // tasks list
-        Expanded(
-          child: _tasks.isEmpty
-              ? const Center(child: Text("No tasks - add one above"))
-              : ListView.builder(
-            itemCount: _tasks.length,
-            itemBuilder: (context, i) {
-              final t = _tasks[i];
-              return ListTile(
-                title: Text(t["text"], style: const TextStyle(fontSize: 16)),
-                trailing: IconButton(
-                  icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                  onPressed: () => _completeTask(t["id"]),
-                ),
-              );
-            },
-          ),
-        ),
-
-        // completed
-        ExpansionTile(
-          title: Text("Completed (${_completed.length})"),
-          children: _completed
-              .map((c) => ListTile(
-            title: Text(c["text"], style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.black45)),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              IconButton(icon: const Icon(Icons.undo), onPressed: () => _undoComplete(c["id"])),
-              IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteCompleted(c["id"])),
-            ]),
-          ))
-              .toList(),
-        ),
-      ],
-    );
-  }
-}
+// // -------- Todo Page (functional UI)
+// class TodoPage extends StatefulWidget {
+//   const TodoPage({super.key});
+//   @override
+//   State<TodoPage> createState() => _TodoPageState();
+// }
+// class _TodoPageState extends State<TodoPage> {
+//   final _taskCtrl = TextEditingController();
+//   List<Map<String, dynamic>> _tasks = []; // {id, text}
+//   List<Map<String, dynamic>> _completed = [];
+//
+//   @override
+//   void dispose() {
+//     _taskCtrl.dispose();
+//     super.dispose();
+//   }
+//
+//   void _addTask() {
+//     final text = _taskCtrl.text.trim();
+//     if (text.isEmpty) return;
+//     setState(() {
+//       final id = DateTime.now().millisecondsSinceEpoch.toString();
+//       _tasks.insert(0, {"id": id, "text": text});
+//       _taskCtrl.clear();
+//     });
+//   }
+//
+//   void _completeTask(String id) {
+//     setState(() {
+//       final idx = _tasks.indexWhere((t) => t["id"] == id);
+//       if (idx != -1) {
+//         final t = _tasks.removeAt(idx);
+//         _completed.insert(0, t);
+//       }
+//     });
+//   }
+//
+//   void _undoComplete(String id) {
+//     setState(() {
+//       final idx = _completed.indexWhere((t) => t["id"] == id);
+//       if (idx != -1) {
+//         final t = _completed.removeAt(idx);
+//         _tasks.insert(0, t);
+//       }
+//     });
+//   }
+//
+//   void _deleteCompleted(String id) {
+//     setState(() {
+//       _completed.removeWhere((t) => t["id"] == id);
+//     });
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(
+//       children: [
+//         // input row
+//         Padding(
+//           padding: const EdgeInsets.symmetric(vertical: 10),
+//           child: Row(
+//             children: [
+//               Expanded(
+//                 child: TextField(
+//                   controller: _taskCtrl,
+//                   decoration: const InputDecoration(
+//                     hintText: "Add a task...",
+//                     fillColor: Colors.white,
+//                     filled: true,
+//                     border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(width: 8),
+//               ElevatedButton(onPressed: _addTask, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFB020)), child: const Text("Add"))
+//             ],
+//           ),
+//         ),
+//
+//         // tasks list
+//         Expanded(
+//           child: _tasks.isEmpty
+//               ? const Center(child: Text("No tasks - add one above"))
+//               : ListView.builder(
+//             itemCount: _tasks.length,
+//             itemBuilder: (context, i) {
+//               final t = _tasks[i];
+//               return ListTile(
+//                 title: Text(t["text"], style: const TextStyle(fontSize: 16)),
+//                 trailing: IconButton(
+//                   icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+//                   onPressed: () => _completeTask(t["id"]),
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+//
+//         // completed
+//         ExpansionTile(
+//           title: Text("Completed (${_completed.length})"),
+//           children: _completed
+//               .map((c) => ListTile(
+//             title: Text(c["text"], style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.black45)),
+//             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+//               IconButton(icon: const Icon(Icons.undo), onPressed: () => _undoComplete(c["id"])),
+//               IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteCompleted(c["id"])),
+//             ]),
+//           ))
+//               .toList(),
+//         ),
+//       ],
+//     );
+//   }
+// }
 
 // -------- Summarizer Page (simple file/text upload)
 class SummarizerPage extends StatefulWidget {

@@ -14,8 +14,8 @@ void main() async {
 
   // Initialize API with your backend address
   await Api().init(
-    // baseUrl: "http://10.195.69.177:8080",//clg
-    baseUrl: "http://192.168.29.143:8080",
+    baseUrl: "http://10.198.65.177:8080",//home
+   // baseUrl: "http://192.168.14.82:8080",
   );
 
   // Restore saved JWT token if exists
@@ -24,6 +24,7 @@ void main() async {
   if (token != null && token.isNotEmpty) {
     Api().setToken(token);
   }
+
 
   runApp(const ExamBuddyApp());
 }

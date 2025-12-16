@@ -16,6 +16,10 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
   List notes = [];
   bool loading = true;
 
+  // 🔥 NEW: selection state
+  bool _selectionMode = false;
+  final Set<String> _selectedNoteIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -31,15 +35,16 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
         loading = false;
       });
     } catch (e) {
-      print("Error loading notes: $e");
+      debugPrint("Error loading notes: $e");
     }
   }
 
+  // ================= UPLOAD =================
   Future<void> uploadPDF() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ["pdf"],
-      withData: true, // required for web to provide bytes
+      withData: true,
     );
 
     if (result == null) return;
@@ -47,10 +52,9 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
     final picked = result.files.single;
 
     try {
-      // Build FormData (web: use bytes, mobile: use path)
       FormData form;
+
       if (picked.bytes != null) {
-        // Web (or any platform where we have bytes)
         final mf = MultipartFile.fromBytes(
           picked.bytes!,
           filename: picked.name,
@@ -62,51 +66,106 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
           "pdf": mf,
         });
       } else if (picked.path != null) {
-        // Mobile (path available)
         form = FormData.fromMap({
           "cluster_id": widget.cluster["_id"],
           "title": picked.name,
-          // Dio will convert this to multipart file
-          "pdf": await MultipartFile.fromFile(picked.path!, filename: picked.name),
+          "pdf": await MultipartFile.fromFile(
+            picked.path!,
+            filename: picked.name,
+          ),
         });
       } else {
-        throw Exception("Unable to read selected file (no bytes and no path).");
+        throw Exception("Unable to read selected file");
       }
 
-      // Call API — note: path must match your server route (e.g. "/clusters/upload")
-      final res = await Api().postMultipart("/clusters/upload", formData: form);
+      await Api().postMultipart("/clusters/upload", formData: form);
 
-      // check server response
-      if (res["error"] != null) {
-        throw Exception(res["error"]);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Upload successful")),
+      );
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Upload successful")));
       await loadNotes();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload failed: $e")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Upload failed: $e")),
+      );
     }
   }
 
+  // ================= DELETE NOTES =================
+  void _confirmDeleteNotes() {
+    if (_selectedNoteIds.isEmpty) return;
 
-  Future<void> deleteCluster() async {
-    try {
-      await Api().delete("/clusters/${widget.cluster["_id"]}");
-      Navigator.pop(context);
-    } catch (e) {
-      print("Failed to delete: $e");
-    }
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Delete notes"),
+        content: Text(
+          "Delete ${_selectedNoteIds.length} selected file(s)?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+
+              // 🔥 backend call will be added later
+              // for now just update UI
+              setState(() {
+                notes.removeWhere(
+                      (n) => _selectedNoteIds.contains(n["_id"]),
+                );
+                _selectedNoteIds.clear();
+                _selectionMode = false;
+              });
+            },
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.cluster["name"]),
+        leading: IconButton(
+          icon: Icon(
+            _selectionMode ? Icons.close : Icons.arrow_back,
+          ),
+          onPressed: () {
+            if (_selectionMode) {
+              setState(() {
+                _selectionMode = false;
+                _selectedNoteIds.clear();
+              });
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
         actions: [
           IconButton(
-            onPressed: deleteCluster,
-            icon: const Icon(Icons.delete, color: Colors.red),
+            icon: Icon(
+              _selectionMode ? Icons.check : Icons.delete,
+              color: _selectionMode ? Colors.green : Colors.red,
+            ),
+            onPressed: () {
+              if (!_selectionMode) {
+                setState(() {
+                  _selectionMode = true;
+                });
+              } else {
+                _confirmDeleteNotes();
+              }
+            },
           ),
         ],
       ),
@@ -122,16 +181,37 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
         itemCount: notes.length,
         itemBuilder: (context, i) {
           final n = notes[i];
-          return Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: Text(n["title"]),
-              subtitle: Text("Tags: ${n["tags"].join(", ")}"),
-              trailing: IconButton(
-                icon: const Icon(Icons.download),
-                onPressed: () {
-                  // TODO: Download PDF
-                },
+          final id = n["_id"];
+          final selected = _selectedNoteIds.contains(id);
+
+          return InkWell(
+            onTap: _selectionMode
+                ? () {
+              setState(() {
+                selected
+                    ? _selectedNoteIds.remove(id)
+                    : _selectedNoteIds.add(id);
+              });
+            }
+                : null,
+            child: Card(
+              color: selected
+                  ? Colors.red.withOpacity(0.15)
+                  : null,
+              child: ListTile(
+                leading: const Icon(Icons.picture_as_pdf),
+                title: Text(n["title"] ?? "Untitled"),
+                subtitle: Text(
+                  "Tags: ${(n["tags"] ?? []).join(", ")}",
+                ),
+                trailing: !_selectionMode
+                    ? IconButton(
+                  icon: const Icon(Icons.download),
+                  onPressed: () {
+                    // TODO: download
+                  },
+                )
+                    : null,
               ),
             ),
           );
