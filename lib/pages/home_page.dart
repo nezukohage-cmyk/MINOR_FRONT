@@ -377,17 +377,20 @@ class _ClustersPageState extends State<ClustersPage> {
 
   Future<void> loadClusters() async {
     try {
-      final res = await Api().get("/clusters/");
+      final res = await Api().get(
+        "/clusters?semester=${widget.semester}",
+      );
+
       setState(() {
         clusters = List<Map<String, dynamic>>.from(res["data"] ?? []);
       });
     } catch (e) {
-      print("Failed to load clusters: $e");
+      debugPrint("Failed to load clusters: $e");
     }
   }
 
 
-  // --- CREATE CLUSTER DIALOG ---
+
   void openCreateClusterDialog() {
     final nameCtrl = TextEditingController();
     final descCtrl = TextEditingController();
@@ -399,12 +402,21 @@ class _ClustersPageState extends State<ClustersPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: "Cluster Name")),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: "Description")),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: "Cluster Name"),
+            ),
+            TextField(
+              controller: descCtrl,
+              decoration: const InputDecoration(labelText: "Description"),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () async {
               final name = nameCtrl.text.trim();
@@ -418,12 +430,13 @@ class _ClustersPageState extends State<ClustersPage> {
                   body: {
                     "name": name,
                     "description": desc,
+                    "tags": [],
+                    "semester": widget.semester,
                   },
                 );
 
-
                 Navigator.pop(ctx);
-                loadClusters(); // refresh UI
+                loadClusters();
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("Failed: $e")),
@@ -436,6 +449,7 @@ class _ClustersPageState extends State<ClustersPage> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -496,123 +510,6 @@ class _ClustersPageState extends State<ClustersPage> {
   }
 }
 
-// // -------- Todo Page (functional UI)
-// class TodoPage extends StatefulWidget {
-//   const TodoPage({super.key});
-//   @override
-//   State<TodoPage> createState() => _TodoPageState();
-// }
-// class _TodoPageState extends State<TodoPage> {
-//   final _taskCtrl = TextEditingController();
-//   List<Map<String, dynamic>> _tasks = []; // {id, text}
-//   List<Map<String, dynamic>> _completed = [];
-//
-//   @override
-//   void dispose() {
-//     _taskCtrl.dispose();
-//     super.dispose();
-//   }
-//
-//   void _addTask() {
-//     final text = _taskCtrl.text.trim();
-//     if (text.isEmpty) return;
-//     setState(() {
-//       final id = DateTime.now().millisecondsSinceEpoch.toString();
-//       _tasks.insert(0, {"id": id, "text": text});
-//       _taskCtrl.clear();
-//     });
-//   }
-//
-//   void _completeTask(String id) {
-//     setState(() {
-//       final idx = _tasks.indexWhere((t) => t["id"] == id);
-//       if (idx != -1) {
-//         final t = _tasks.removeAt(idx);
-//         _completed.insert(0, t);
-//       }
-//     });
-//   }
-//
-//   void _undoComplete(String id) {
-//     setState(() {
-//       final idx = _completed.indexWhere((t) => t["id"] == id);
-//       if (idx != -1) {
-//         final t = _completed.removeAt(idx);
-//         _tasks.insert(0, t);
-//       }
-//     });
-//   }
-//
-//   void _deleteCompleted(String id) {
-//     setState(() {
-//       _completed.removeWhere((t) => t["id"] == id);
-//     });
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       children: [
-//         // input row
-//         Padding(
-//           padding: const EdgeInsets.symmetric(vertical: 10),
-//           child: Row(
-//             children: [
-//               Expanded(
-//                 child: TextField(
-//                   controller: _taskCtrl,
-//                   decoration: const InputDecoration(
-//                     hintText: "Add a task...",
-//                     fillColor: Colors.white,
-//                     filled: true,
-//                     border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-//                   ),
-//                 ),
-//               ),
-//               const SizedBox(width: 8),
-//               ElevatedButton(onPressed: _addTask, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFB020)), child: const Text("Add"))
-//             ],
-//           ),
-//         ),
-//
-//         // tasks list
-//         Expanded(
-//           child: _tasks.isEmpty
-//               ? const Center(child: Text("No tasks - add one above"))
-//               : ListView.builder(
-//             itemCount: _tasks.length,
-//             itemBuilder: (context, i) {
-//               final t = _tasks[i];
-//               return ListTile(
-//                 title: Text(t["text"], style: const TextStyle(fontSize: 16)),
-//                 trailing: IconButton(
-//                   icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-//                   onPressed: () => _completeTask(t["id"]),
-//                 ),
-//               );
-//             },
-//           ),
-//         ),
-//
-//         // completed
-//         ExpansionTile(
-//           title: Text("Completed (${_completed.length})"),
-//           children: _completed
-//               .map((c) => ListTile(
-//             title: Text(c["text"], style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.black45)),
-//             trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-//               IconButton(icon: const Icon(Icons.undo), onPressed: () => _undoComplete(c["id"])),
-//               IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteCompleted(c["id"])),
-//             ]),
-//           ))
-//               .toList(),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-// -------- Summarizer Page (simple file/text upload)
 class SummarizerPage extends StatefulWidget {
   const SummarizerPage({super.key});
   @override

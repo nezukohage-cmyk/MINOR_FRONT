@@ -29,7 +29,7 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
   Future<void> loadNotes() async {
     try {
       final res =
-      await Api().get("/clusters/${widget.cluster["_id"]}/notes");
+      await Api().get("/clusters/${widget.cluster["id"]}/notes");
       setState(() {
         notes = res["data"] ?? [];
         loading = false;
@@ -44,7 +44,7 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ["pdf"],
-      withData: true,
+      withData: true, // required for web
     );
 
     if (result == null) return;
@@ -52,33 +52,46 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
     final picked = result.files.single;
 
     try {
-      FormData form;
+      final form = FormData();
+
+      // 🔥 ALWAYS add cluster_id as STRING
+      form.fields.add(
+        MapEntry("cluster_id", widget.cluster["id"].toString()),
+      );
+      form.fields.add(
+        MapEntry("title", picked.name),
+      );
 
       if (picked.bytes != null) {
-        final mf = MultipartFile.fromBytes(
-          picked.bytes!,
-          filename: picked.name,
-        );
-
-        form = FormData.fromMap({
-          "cluster_id": widget.cluster["_id"],
-          "title": picked.name,
-          "pdf": mf,
-        });
-      } else if (picked.path != null) {
-        form = FormData.fromMap({
-          "cluster_id": widget.cluster["_id"],
-          "title": picked.name,
-          "pdf": await MultipartFile.fromFile(
-            picked.path!,
-            filename: picked.name,
+        // Web
+        form.files.add(
+          MapEntry(
+            "pdf",
+            MultipartFile.fromBytes(
+              picked.bytes!,
+              filename: picked.name,
+            ),
           ),
-        });
+        );
+      } else if (picked.path != null) {
+        // Mobile
+        form.files.add(
+          MapEntry(
+            "pdf",
+            await MultipartFile.fromFile(
+              picked.path!,
+              filename: picked.name,
+            ),
+          ),
+        );
       } else {
         throw Exception("Unable to read selected file");
       }
 
-      await Api().postMultipart("/clusters/upload", formData: form);
+      await Api().postMultipart(
+        "/clusters/upload",
+        formData: form,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Upload successful")),
@@ -91,6 +104,7 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
       );
     }
   }
+
 
   // ================= DELETE NOTES =================
   void _confirmDeleteNotes() {
