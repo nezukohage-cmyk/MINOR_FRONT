@@ -14,7 +14,7 @@ void main() async {
 
   // Initialize API with your backend address
   await Api().init(
-    baseUrl: "http://10.198.65.177:8080",//home
+    baseUrl: "http://192.168.14.62:8080",//home
    // baseUrl: "http://192.168.14.82:8080",
   );
 

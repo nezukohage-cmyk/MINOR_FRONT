@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:Reddit/services/api.dart';
 import 'package:dio/dio.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
+//import 'dart:html' as html;
 
 class ClusterDetailsPage extends StatefulWidget {
   final Map<String, dynamic> cluster;
@@ -24,6 +29,36 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
   void initState() {
     super.initState();
     loadNotes();
+  }
+
+  Future<void> openPdf(dynamic url) async {
+    final fileUrl = url?.toString().trim();
+
+    if (fileUrl == null || fileUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("File URL missing")),
+      );
+      return;
+    }
+
+    final uri = Uri.tryParse(fileUrl);
+    if (uri == null || !uri.hasScheme) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Invalid URL: $fileUrl")),
+      );
+      return;
+    }
+
+    final ok = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Could not open file")),
+      );
+    }
   }
 
   Future<void> loadNotes() async {
@@ -143,6 +178,10 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
       ),
     );
   }
+  Future<void> downloadPdf(dynamic url, String title) async {
+    await openPdf(url);
+  }
+
 
   // ================= UI =================
   @override
@@ -208,26 +247,38 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
               });
             }
                 : null,
-            child: Card(
-              color: selected
-                  ? Colors.red.withOpacity(0.15)
-                  : null,
-              child: ListTile(
-                leading: const Icon(Icons.picture_as_pdf),
-                title: Text(n["title"] ?? "Untitled"),
-                subtitle: Text(
-                  "Tags: ${(n["tags"] ?? []).join(", ")}",
-                ),
-                trailing: !_selectionMode
-                    ? IconButton(
-                  icon: const Icon(Icons.download),
-                  onPressed: () {
-                    // TODO: download
-                  },
-                )
+            child: GestureDetector(
+              onTap: _selectionMode
+                  ? null
+                  : () {
+                print("FRONTEND FILE URL ---> '${n["file_url"]}'");
+                openPdf(n["file_url"]);
+              },
+              child: Card(
+                color: selected
+                    ? Colors.red.withOpacity(0.15)
                     : null,
+                child: ListTile(
+                  leading: const Icon(Icons.picture_as_pdf),
+                  title: Text(n["title"] ?? "Untitled"),
+                  subtitle: Text(
+                    "Tags: ${(n["tags"] ?? []).join(", ")}",
+                  ),
+                  trailing: !_selectionMode
+                      ? IconButton(
+                    icon: const Icon(Icons.download),
+                    onPressed: () {
+                      downloadPdf(
+                        n["file_url"],
+                        n["title"] ?? "note",
+                      );
+                    },
+                  )
+                      : null,
+                ),
               ),
             ),
+
           );
         },
       ),

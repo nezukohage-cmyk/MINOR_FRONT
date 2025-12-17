@@ -171,7 +171,7 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _subjects.map((s) {
-                    final id = s["id"];
+                    final id = s["name"];
                     final label = s["name"] ;
                     final selected = _selectedSubjects.contains(id);
 
@@ -200,7 +200,7 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
 
                   ..._selectedSubjects.map((subj) {
                     final relatedTopics = _topics.where((t) {
-                      final parents = List<String>.from(t["parent_subjects"] ?? []);
+                      final parents = List<String>.from(t["parent_subject"] ?? []);
                       return parents.contains(subj);
                     }).toList();
 
@@ -223,7 +223,7 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
                           spacing: 8,
                           runSpacing: 8,
                           children: relatedTopics.map((t) {
-                            final tid = t["id"];
+                            final tid = t["name"];
                             final label = t["name"] ?? tid;
                             final selected = _selectedTopics[subj]!.contains(tid);
 

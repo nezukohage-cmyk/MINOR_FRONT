@@ -63,7 +63,7 @@ class _TodoPageState extends State<TodoPage> {
       builder: (ctx) {
         return StatefulBuilder(builder: (ctx, setStateDialog) {
           return AlertDialog(
-            title: const Text("Add Task"),
+            title: const Text("Add Task",style: TextStyle(color: Colors.white),),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
