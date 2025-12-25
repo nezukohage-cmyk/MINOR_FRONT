@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:Reddit/services/api.dart';
 import 'package:Reddit/pages/quiz_questions_page.dart';
@@ -14,16 +15,19 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
   final _formKey = GlobalKey<FormState>();
 
   // ===============================
-  // MULTI-SELECTION STATE
+  // STATE
   // ===============================
-  final Set<String> _selectedSubjects = {};
-  final Map<String, Set<String>> _selectedTopics = {};
+  final Set<String> _selectedSubjects = {};                 // SUBJECT NAMES
+  final Map<String, Set<String>> _selectedTopics = {};      // subjectName -> topicNames
 
   // ===============================
-  // DATA FROM BACKEND (/tags)
+  // TAG DATA
   // ===============================
   final List<Map<String, dynamic>> _subjects = [];
   final List<Map<String, dynamic>> _topics = [];
+
+  // name -> id (needed for topic filtering)
+  final Map<String, String> _subjectNameToId = {};
 
   // ===============================
   // CONTROLLERS
@@ -52,10 +56,12 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
 
       _subjects.clear();
       _topics.clear();
+      _subjectNameToId.clear();
 
       for (final t in data) {
         if (t["type"] == "subject") {
           _subjects.add(t);
+          _subjectNameToId[t["name"]] = t["id"];
         } else if (t["type"] == "topic") {
           _topics.add(t);
         }
@@ -68,8 +74,13 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
       );
     }
   }
+
+  // ===============================
+  // START QUIZ
+  // ===============================
   Future<void> _startQuiz() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_selectedSubjects.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Select at least one subject")),
@@ -83,14 +94,16 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
       final questionCount = int.parse(_countCtrl.text);
       final timeMinutes = int.parse(_timeCtrl.text);
 
-      // Build payload for backend
+      // Build backend payload
       final Map<String, int> count = {};
       final Map<String, List<String>> topics = {};
 
-      for (final s in _selectedSubjects) {
-        count[s] = questionCount;
-        if (_selectedTopics[s] != null && _selectedTopics[s]!.isNotEmpty) {
-          topics[s] = _selectedTopics[s]!.toList();
+      for (final subject in _selectedSubjects) {
+        count[subject] = questionCount;
+
+        final selected = _selectedTopics[subject];
+        if (selected != null && selected.isNotEmpty) {
+          topics[subject] = selected.toList();
         }
       }
 
@@ -100,6 +113,9 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
         "topics": topics,
       };
 
+      // DEBUG (safe to remove later)
+      debugPrint("QUIZ START PAYLOAD => ${jsonEncode(payload)}");
+
       final res = await Api().postJson("/quiz/start", body: payload);
 
       if (res["quiz_id"] == null || res["questions"] == null) {
@@ -108,8 +124,8 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
 
       final quizId = res["quiz_id"];
       final total = res["total_questions"] ?? 0;
-      final rawQuestions = List<Map<String, dynamic>>.from(res["questions"]);
 
+      final rawQuestions = List<Map<String, dynamic>>.from(res["questions"]);
       final questions = rawQuestions.map((q) {
         return {
           "id": (q["_id"] ?? q["id"]).toString(),
@@ -163,6 +179,7 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
             child: Form(
               key: _formKey,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
                 // ================= SUBJECTS =================
                 const Text("Choose Subjects", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
@@ -171,21 +188,20 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _subjects.map((s) {
-                    final id = s["name"];
-                    final label = s["name"] ;
-                    final selected = _selectedSubjects.contains(id);
+                    final name = s["name"];
+                    final selected = _selectedSubjects.contains(name);
 
                     return FilterChip(
-                      label: Text(label),
+                      label: Text(name),
                       selected: selected,
                       onSelected: (v) {
                         setState(() {
                           if (v) {
-                            _selectedSubjects.add(id);
-                            _selectedTopics[id] = {};
+                            _selectedSubjects.add(name);
+                            _selectedTopics[name] = {};
                           } else {
-                            _selectedSubjects.remove(id);
-                            _selectedTopics.remove(id);
+                            _selectedSubjects.remove(name);
+                            _selectedTopics.remove(name);
                           }
                         });
                       },
@@ -196,12 +212,14 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
                 // ================= TOPICS =================
                 if (_selectedSubjects.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  const Text("Select Topics ", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text("Select Topics", style: TextStyle(fontWeight: FontWeight.bold)),
 
-                  ..._selectedSubjects.map((subj) {
+                  ..._selectedSubjects.map((subjectName) {
+                    final subjectId = _subjectNameToId[subjectName];
+
                     final relatedTopics = _topics.where((t) {
-                      final parents = List<String>.from(t["parent_subject"] ?? []);
-                      return parents.contains(subj);
+                      final parents = List<String>.from(t["parent_subjects"] ?? []);
+                      return subjectId != null && parents.contains(subjectId);
                     }).toList();
 
                     if (relatedTopics.isEmpty) return const SizedBox();
@@ -210,31 +228,23 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 10),
-
-                        Text(
-                          _subjects.firstWhere(
-                                (s) => s["_id"] == subj,
-                            orElse: () => const {"name": "name"},
-                          )["name"],
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
+                        Text(subjectName, style: const TextStyle(fontWeight: FontWeight.w600)),
 
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: relatedTopics.map((t) {
-                            final tid = t["name"];
-                            final label = t["name"] ?? tid;
-                            final selected = _selectedTopics[subj]!.contains(tid);
+                            final topicName = t["name"];
+                            final selected = _selectedTopics[subjectName]!.contains(topicName);
 
                             return FilterChip(
-                              label: Text(label),
+                              label: Text(topicName),
                               selected: selected,
                               onSelected: (v) {
                                 setState(() {
                                   v
-                                      ? _selectedTopics[subj]!.add(tid)
-                                      : _selectedTopics[subj]!.remove(tid);
+                                      ? _selectedTopics[subjectName]!.add(topicName)
+                                      : _selectedTopics[subjectName]!.remove(topicName);
                                 });
                               },
                             );
@@ -282,7 +292,7 @@ class _QuizSetupPageState extends State<QuizSetupPage> {
                     onPressed: _loading ? null : _startQuiz,
                     child: _loading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Start Quiz", style: TextStyle(fontSize: 16,color: Colors.white),),
+                        : const Text("Start Quiz", style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ),
               ]),

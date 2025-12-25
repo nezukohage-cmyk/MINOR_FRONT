@@ -8,6 +8,7 @@ import 'package:Reddit/services/api.dart';
 import 'package:Reddit/pages/semester_selector.dart';
 import 'package:Reddit/pages/quiz_page.dart';
 import 'package:Reddit/pages/quiz_history_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -43,20 +44,11 @@ class _HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => SemesterSelector(
-              title: "Select Semester",
-              onSelect: (sem) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => NotesPage(semester: sem),
-                  ),
-                );
-              },
-            ),
+            builder: (_) => const NotesPage(semester: 0),
           ),
         );
         break;
+
 
 
       case 'quiz_history':
@@ -317,17 +309,19 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   Future<void> _loadNotes() async {
-    // Placeholder: call Api().get("/notes") when backend is ready
-    // final res = await Api().get("/notes");
-    // Parse and setState(...)
-    await Future.delayed(const Duration(milliseconds: 200));
-    setState(() {
-      _notes = [
-        {"id": "1", "title": "Lecture 1 - Algorithms.pdf"},
-        {"id": "2", "title": "Lecture 2 - Data structures.pdf"},
-      ];
-    });
+    try {
+      final res = await Api().get("/notes/saved");
+
+      setState(() {
+        _notes = List<Map<String, dynamic>>.from(res["data"] ?? []);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to load notes: $e")),
+      );
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -342,15 +336,56 @@ class _NotesPageState extends State<NotesPage> {
           child: ListTile(
             leading: const Icon(Icons.picture_as_pdf),
             title: Text(note["title"] ?? "Untitled"),
-            trailing: IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () {
-                // TODO: call Api.downloadBytes(url) and save file
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Download placeholder")));
+            onTap: () async {
+              final url = note["file_url"];
+              if (url != null) {
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              }
+            },
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) async {
+                switch (value) {
+                  case 'view':
+                    final url = note["file_url"];
+                    if (url != null) {
+                      await launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                    break;
+
+                  case 'download':
+                    final url = note["file_url"];
+                    if (url != null) {
+                      await launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                    break;
+
+                  case 'unsave':
+                    await Api().postJson(
+                      "/notes/unsave",
+                      body: {"note_id": note["id"]},
+                    );
+                    await _loadNotes();
+                    break;
+                }
               },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'view', child: Text("View")),
+                PopupMenuItem(value: 'download', child: Text("Download")),
+                PopupMenuItem(value: 'unsave', child: Text("Remove from My Notes")),
+              ],
             ),
           ),
         );
+
       },
     );
   }

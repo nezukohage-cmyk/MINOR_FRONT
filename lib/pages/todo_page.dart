@@ -276,7 +276,7 @@ class _TodoPageState extends State<TodoPage> {
             ),
             child: const Text(
               "Add Task",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color: Colors.white),
             ),
           ),
         ),

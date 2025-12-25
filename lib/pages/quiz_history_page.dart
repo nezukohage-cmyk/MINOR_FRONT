@@ -56,7 +56,8 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
         final startedAt = DateTime.tryParse(q["started_at"] ?? "");
         final submittedAt = DateTime.tryParse(q["submitted_at"] ?? "");
 
-        final total = (q["question_ids"] as List?)?.length ?? 0;
+        final total = q["served_questions"] ?? 0;
+
         final score = q["score"] ?? 0;
 
         final subjectNames =

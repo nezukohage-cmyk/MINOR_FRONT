@@ -30,6 +30,52 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
     super.initState();
     loadNotes();
   }
+  // Future<void> saveNoteToMyNotes(Map<String, dynamic> note) async {
+  //   try {
+  //     await Api().postJson(
+  //       "/notes/save",
+  //       body: {
+  //         "note_id": note["id"], // ✅ CONFIRMED FIELD
+  //         "cluster_id": widget.cluster["id"],
+  //       },
+  //     );
+  //
+  //     if (!mounted) return;
+  //
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text("Saved to My Notes")),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Save failed: $e")),
+  //     );
+  //   }
+  // }
+  Future<void> saveNoteToMyNotes(Map<String, dynamic> note) async {
+    try {
+      await Api().postJson(
+        "/notes/save",
+        body: {
+          "note_id": note["id"],
+          "cluster_id": widget.cluster["id"],
+          "title": note["title"],
+          "file_url": note["file_url"],
+          "tags": note["tags"] ?? [],
+        },
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Saved to My Notes")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Save failed: $e")),
+      );
+    }
+  }
+
 
   Future<void> openPdf(dynamic url) async {
     final fileUrl = url?.toString().trim();
@@ -265,17 +311,41 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
                     "Tags: ${(n["tags"] ?? []).join(", ")}",
                   ),
                   trailing: !_selectionMode
-                      ? IconButton(
-                    icon: const Icon(Icons.download),
-                    onPressed: () {
-                      downloadPdf(
-                        n["file_url"],
-                        n["title"] ?? "note",
-                      );
+                      ? PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'download':
+                          downloadPdf(
+                            n["file_url"],
+                            n["title"] ?? "note",
+                          );
+                          break;
+                        case 'save':
+                          saveNoteToMyNotes(n);
+                          break;
+                      }
                     },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'download',
+                        child: ListTile(
+                          leading: Icon(Icons.download),
+                          title: Text("Download"),
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'save',
+                        child: ListTile(
+                          leading: Icon(Icons.bookmark_border),
+                          title: Text("Save"),
+                        ),
+                      ),
+                    ],
                   )
                       : null,
                 ),
+
               ),
             ),
 
