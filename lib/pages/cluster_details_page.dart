@@ -224,8 +224,23 @@ class _ClusterDetailsPageState extends State<ClusterDetailsPage> {
       ),
     );
   }
-  Future<void> downloadPdf(dynamic url, String title) async {
-    await openPdf(url);
+  Future<void> downloadPdf(String url, String filename) async {
+    String forceDownloadUrl(String url) {
+      if (!url.contains('/upload/')) return url;
+      return url.replaceFirst('/upload/', '/upload/fl_attachment/');
+    }
+    try {
+      final downloadUrl = forceDownloadUrl(url);
+
+      await launchUrl(
+        Uri.parse(downloadUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Download failed")),
+      );
+    }
   }
 
 

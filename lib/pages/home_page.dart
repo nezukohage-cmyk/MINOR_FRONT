@@ -1,4 +1,5 @@
 // lib/pages/home_page.dart
+import 'dart:typed_data';
 import 'package:Reddit/pages/cluster_details_page.dart';
 import 'package:Reddit/pages/quiz_setup_page.dart';
 import 'package:Reddit/pages/todo_page.dart';
@@ -9,6 +10,12 @@ import 'package:Reddit/pages/semester_selector.dart';
 import 'package:Reddit/pages/quiz_page.dart';
 import 'package:Reddit/pages/quiz_history_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:web/web.dart' as web;
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -301,6 +308,10 @@ class NotesPage extends StatefulWidget {
 }
 class _NotesPageState extends State<NotesPage> {
   List<Map<String, dynamic>> _notes = [];
+  String forceDownloadUrl(String url) {
+    if (!url.contains('/upload/')) return url;
+    return url.replaceFirst('/upload/', '/upload/fl_attachment/');
+  }
 
   @override
   void initState() {
@@ -321,7 +332,20 @@ class _NotesPageState extends State<NotesPage> {
       );
     }
   }
+  Future<void> downloadPdf(String url, String filename) async {
+    try {
+      final downloadUrl = forceDownloadUrl(url);
 
+      await launchUrl(
+        Uri.parse(downloadUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Download failed")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -361,12 +385,13 @@ class _NotesPageState extends State<NotesPage> {
                   case 'download':
                     final url = note["file_url"];
                     if (url != null) {
-                      await launchUrl(
-                        Uri.parse(url),
-                        mode: LaunchMode.externalApplication,
+                      await downloadPdf(
+                        url,
+                        note["title"] ?? "note.pdf",
                       );
                     }
                     break;
+
 
                   case 'unsave':
                     await Api().postJson(
